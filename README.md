@@ -24,7 +24,7 @@ For each genome, we executed:
 
 1. **K-mer counting**
 
-   * Using `run_kmer_count.sh` inside each genome folder.
+   * Using `k-mer-count/run_kmer_count.sh` inside each genome folder.
    * Output includes:
 
      * `mer_counts.jf`
@@ -33,8 +33,31 @@ For each genome, we executed:
 
 2. **Sorting**
 
-   * Lexicographical sorting using `lexo_sorting.sh`
+   * Lexicographical sorting using `k-mer-count/lexo_sorting.sh`
    * Sorted output saved as:
 
      * `lexo_mer_counts_PAM_sorted.txt`
-    
+
+## Step-2: Custom HAWK implementation
+
+1. **hawk-executable**
+
+   * Put `hawk.cpp` and `kmer.h` in the same folder
+   * Compile using pthreads:
+
+     ```
+     g++ -O3 -std=c++17 hawk.cpp -o hawk -lpthread
+     ```
+
+2. **Reads two sorted k-mer count filenames from**
+
+   * `case_sorted_count.txt`
+   * `control_sorted_count.txt`
+
+3. **Run hawk**
+
+   ```
+   ./hawk case_sorted_count.txt control_sorted_count.txt
+   ```
+
+---
