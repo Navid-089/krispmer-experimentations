@@ -42,7 +42,7 @@ For each genome, we executed:
 
 1. **hawk-executable**
 
-   * Put `hawk.cpp` and `kmer.h` in the same folder
+   * Put `difference-with-ref/hawk.cpp` and `difference-with-ref/kmer.h` in the same folder
    * Compile using pthreads:
 
      ```
