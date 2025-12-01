@@ -1,6 +1,8 @@
-# 🧬 Krispmer Experimentation Pipeline - Progress
 
-## Datasets Used
+
+# 🧬 Krispmer Experimentation Pipeline - Progress 🔬
+
+## 📊 Datasets Used
 
 | Name | Link |
 | :--- | :--- |
@@ -12,47 +14,68 @@
 
 -----
 
-## Reference Genome Choice
+## 🌾 Reference Genome Choice
 
-All compared genomes (Basmati, IR8, N22) are from **Indica rice**, so we selected the **Indica R498 reference genome (GCA\_002151415.1)**.
+All compared genomes (Basmati, IR8, N22) are from **Indica rice**, thus the **Indica R498 reference genome (GCA\_002151415.1)** was selected for difference analysis.
 
 -----
 
-## Pipeline Steps
+## 🛠️ Pipeline Steps (Chronological Execution)
 
-1.  **K-mer Counting:** Ran `k-mer-count/run_kmer_count.sh` for each genome.
-2.  **K-mer Sorting:** Ran `k-mer-count/lexo_sorting.sh` to generate `lexo_mer_counts_PAM_sorted.txt`.
-3.  **HAWK Compilation:** Compiled the custom HAWK tool:
+1.  **K-mer Counting:** Executed Jellyfish counting:
+
+    ```bash
+    k-mer-count/run_kmer_count.sh
+    ```
+
+2.  **K-mer Sorting:** Sorted k-mer counts lexicographically:
+
+    ```bash
+    k-mer-count/lexo_sorting.sh
+    ```
+
+3.  **HAWK Compilation:** Compiled the custom difference-finding tool:
+
     ```bash
     g++ -O3 -std=c++17 hawk.cpp -o hawk -lpthread
     ```
-4.  **HAWK Execution:** Executed HAWK to find k-mer differences:
+
+4.  **HAWK Execution:** Compared 'case' vs. 'control' sorted k-mer lists:
+
     ```bash
     ./hawk case_sorted_count.txt control_sorted_count.txt
     ```
-5.  **Exon Extraction (gffread):** Extracted exon sequences from the annotated genome:
+
+5.  **Exon Extraction:** Used `gffread` to extract exon sequences for indexing:
+
     ```bash
     gffread genomic.gff -g genome.fna -x exons.fa
     ```
-6.  **Exon Indexing (Bowtie2):** Built an index of the extracted exons:
+
+6.  **Exon Indexing:** Built a Bowtie2 index of the reference exons:
+
     ```bash
     bowtie2-build rice_exons.fa rice_exons
     ```
-7.  **Unique gRNA Filtering:** Executed the custom script for unique gRNA identification and convereted it to .fasta format:
+
+7.  **Unique gRNA Generation:** Executed script to filter HAWK output and convert unique candidate k-mers (potential gRNAs) to FASTA format:
+
     ```bash
     gergRNAs_unique_case.sh
     ```
-8. **gRNA Alignment using BowTie2:** Aligned the k-mers present multiple times in case and single times in control (reference). Also performed it for the k-mers generated from the previous step. 
 
-    ```bash 
+8.  **gRNA Alignment and Filtering:** Aligned candidate gRNAs against the exon index and filtered for unique hits:
+
+    ```bash
     .\runBowTie.sh
-    .\runBowTie_unique.sh
+    .\runBowTie_unique.sh # Filters SAM/BAM output for highly specific targets
     ```
 
-9. **Target Gene Extraction and Quantification:** Executed `getGeneList_multiple_v_single_all` to analyze final specific targets, comparing two sets (`multiple_v_single` and `unique_PAM_gRNAs_n22`). 
+9.  **Target Gene Extraction:** Executed final script to identify and quantify the unique **gene IDs** targeted by the perfectly-matching (XM:i:0) gRNAs:
 
-    ```bash 
-      .\getGeneList_multiple_v_single_all
+    ```bash
+    .\getGeneList_multiple_v_single_all
     ```
 
 -----
+
