@@ -1,0 +1,231 @@
+atif@atlas:~/krispmer/new_datasets/exps/n22$ ./runBowtie_unique.sh 
+Use of uninitialized value $bt2_args[7] in join or string at /home/atif/bowtie2-2.4.1-linux-x86_64/bowtie2 line 423.
+Use of uninitialized value $bt2_args[8] in join or string at /home/atif/bowtie2-2.4.1-linux-x86_64/bowtie2 line 423.
+Use of uninitialized value in exists at /home/atif/bowtie2-2.4.1-linux-x86_64/bowtie2 line 81.
+Use of uninitialized value in exists at /home/atif/bowtie2-2.4.1-linux-x86_64/bowtie2 line 81.
+Use of uninitialized value $bt2_args[7] in join or string at /home/atif/bowtie2-2.4.1-linux-x86_64/bowtie2 line 459.
+Use of uninitialized value $bt2_args[8] in join or string at /home/atif/bowtie2-2.4.1-linux-x86_64/bowtie2 line 459.
+25391572 reads; of these:
+  25391572 (100.00%) were unpaired; of these:
+    20652055 (81.33%) aligned 0 times
+    3220192 (12.68%) aligned exactly 1 time
+    1519325 (5.98%) aligned >1 times
+18.67% overall alignment rate
+atif@atlas:~/krispmer/new_datasets/exps/n22$ 
+
+
+unique_PAM_gRNAs_n22_exons_all.sam
+hawk                                unique_PAM_gRNAs_n22.fasta
+lexo_mer_counts_PAM_sorted_n22.txt  unique_PAM_gRNAs_n22.txt
+lexo_mer_counts_PAM_sorted.txt
+
+
+
+prefix_1=multiple_v_single
+ref=exons
+
+grep 'XM:i:0' ${prefix_1}_${ref}_all.sam > ${prefix_1}_${ref}_all_max_0.sam
+wc -l ${prefix_1}_${ref}_all_max_0.sam
+fileName=${prefix_1}_${ref}_all_max_0.sam
+outputFile=geneIDs_${prefix_1}_${ref}_all_max_0.txt
+awk '{print $3}' $fileName | sed 's/^rna-//' > $outputFile
+
+wc -l $outputFile
+
+sort geneIDs_${prefix_1}_${ref}_all_max_0.txt | uniq > geneIDs_${prefix_1}_${ref}_all_max_0_sorted_uniq.txt
+
+wc -l geneIDs_${prefix_1}_${ref}_all_max_0_sorted_uniq.txt
+
+
+prefix_2=unique_PAM_gRNAs_n22
+
+grep 'XM:i:0' ${prefix_2}_${ref}_all.sam > ${prefix_2}_${ref}_all_max_0.sam
+fileName=${prefix_2}_${ref}_all_max_0.sam
+outputFile=${prefix_2}_${ref}_all_max_0_genes.txt
+awk '{print $3}' $fileName | sed 's/^rna-//' > $outputFile
+
+
+
+
+
+# sort geneIDs_multiple_v_sin_all_max_0.txt | uniq > geneIDs_multiple_v_single_exons_all_max_0_sorted_uniq.txt
+sort $outputFile | uniq > ${prefix_2}_${ref}_all_max_0_genes_sorted_uniq.txt
+
+comm -12 geneIDs_${prefix_1}_${ref}_all_max_0_sorted_uniq.txt ${prefix_2}_${ref}_all_max_0_genes_sorted_uniq.txt > genes_multiple_v_single_analysis_all.txt
+
+
+
+run_kmer_count.sh 
+
+#!/bin/bash
+# k-mer counting and filtering for PAM (NGG/CCN)
+
+# Input FASTA genome file
+GENOME="indica_R498_genomic.fna"
+
+# Output files
+JF_OUT="mer_counts.jf"
+DUMP_OUT="mer_counts_dumps.txt"
+FILTERED_OUT="mer_counts_PAM.txt"
+
+echo "Starting counting ... "
+# Step 1: Count 23-mers with Jellyfish
+jellyfish count -m 23 -s 500M -t 16 -C $GENOME -o $JF_OUT -L 0 -U 999999
+echo "Starting to dump .... "
+# Step 2: Dump counts into text format
+jellyfish dump -c $JF_OUT > $DUMP_OUT
+echo "Starting to filter ... "
+# Step 3: Filter for PAM sequences (NGG or CCN)
+awk '{if($1 ~ /^CC/ || $1 ~ /GG$/) print $0}' $DUMP_OUT > $FILTERED_OUT
+
+echo "Done! Filtered k-mers with PAM saved in $FILTERED_OUT"
+
+lexo-sorting.sh
+#!/bin/bash
+
+BASE_DIR=~/krispmer/new_datasets/k-mer-counts
+
+for dir in "$BASE_DIR"/*; do
+    if [ -d "$dir" ]; then
+        input_file="$dir/mer_counts_PAM.txt"
+        output_file="$dir/lexo_mer_counts_PAM_sorted.txt"
+
+        if [ -f "$input_file" ]; then
+            if [ -f "$output_file" ]; then
+                echo "Skipping $dir — sorted file already exists."
+            else
+                echo "Sorting $input_file by k-mer sequence ..."
+                sort -k1,1 "$input_file" > "$output_file"
+                echo "  -> Saved to $output_file"
+            fi
+        else
+            echo "No mer_counts_PAM.txt found in $dir"
+        fi
+    fi
+done
+
+run hawk 
+
+./hawk
+
+
+atif@atlas:~/krispmer/new_datasets/exps/n22$ cat getgRNAs_unique_case.sh 
+awk '($1 ~ /^CC/ || $1 ~ /GG$/) && $2 == 1 {print $0}' lexo_mer_counts_PAM_sorted_n22.txt > unique_PAM_gRNAs_n22.txt
+
+atif@atlas:~/krispmer/new_datasets/exps/n22$ 
+
+exons generating 
+
+gffread genomic.gff -g genome.fna -x exons.fa
+bowtie2-build rice_exons.fa rice_exons
+
+
+runBowTie.sh
+atif@atlas:~/krispmer/new_datasets/exps/n22$ cat runBowtie
+file=multiple_v_single
+ref=exons
+/home/atif/bowtie2-2.4.1-linux-x86_64/bowtie2 -p 16 -a -x ${ref}  -f ${file}.fasta --no-unal -S ${file}_${ref}_all.sam
+
+file=present_v_absent
+ref=exons
+/home/atif/bowtie2-2.4.1-linux-x86_64/bowtie2 -p 16  -x ${ref}  -f ${file}.fasta --no-unal -S ${file}_${ref}_all.sam
+atif@atlas:~/krispmer/new_datasets/exps/n22$ 
+
+
+runBowtie_unique.sh
+
+
+atif@atlas:~/krispmer/new_datasets/exps/n22$ cat runBowtie_unique.sh 
+file=unique_PAM_gRNAs_n22
+ref=exons
+# /home/atif/bowtie2-2.4.1-linux-x86_64/bowtie2 -p 16 -a -x ${ref}  -f ${file}.fasta --no-unal -S ${file}_${ref}_all.sam
+/home/atif/bowtie2-2.4.1-linux-x86_64/bowtie2 -p 16 -a -x ${ref} -f ${file}.fasta -S ${file}_${ref}_all.sam --no-unal
+
+atif@atlas:~/krispmer/new_datasets/exps/n22$ 
+
+
+convertToFasta.sh
+
+atif@atlas:~/krispmer/new_datasets/exps/n22$ cat convertToFasta.sh 
+awk '{printf(">%d\n%s\n", NR, $1)}' unique_PAM_gRNAs_n22.txt > unique_PAM_gRNAs_n22.fasta
+
+atif@atlas:~/krispmer/new_datasets/exps/n22$ 
+
+
+atif@atlas:~/krispmer/new_datasets/exps/n22$ cat getGeneList_multiple_v_single_all 
+prefix_1=multiple_v_single
+ref=exons
+
+grep 'XM:i:0' ${prefix_1}_${ref}_all.sam > ${prefix_1}_${ref}_all_max_0.sam
+wc -l ${prefix_1}_${ref}_all_max_0.sam
+fileName=${prefix_1}_${ref}_all_max_0.sam
+outputFile=geneIDs_${prefix_1}_${ref}_all_max_0.txt
+awk '{print $3}' $fileName | sed 's/^rna-//' > $outputFile
+
+wc -l $outputFile
+
+sort geneIDs_${prefix_1}_${ref}_all_max_0.txt | uniq > geneIDs_${prefix_1}_${ref}_all_max_0_sorted_uniq.txt
+
+wc -l geneIDs_${prefix_1}_${ref}_all_max_0_sorted_uniq.txt
+
+
+prefix_2=unique_PAM_gRNAs_n22
+
+grep 'XM:i:0' ${prefix_2}_${ref}_all.sam > ${prefix_2}_${ref}_all_max_0.sam
+fileName=${prefix_2}_${ref}_all_max_0.sam
+outputFile=${prefix_2}_${ref}_all_max_0_genes.txt
+awk '{print $3}' $fileName | sed 's/^rna-//' > $outputFile
+
+
+
+
+
+# sort geneIDs_multiple_v_sin_all_max_0.txt | uniq > geneIDs_multiple_v_single_exons_all_max_0_sorted_uniq.txt
+sort $outputFile | uniq > ${prefix_2}_${ref}_all_max_0_genes_sorted_uniq.txt
+
+comm -12 geneIDs_${prefix_1}_${ref}_all_max_0_sorted_uniq.txt ${prefix_2}_${ref}_all_max_0_genes_sorted_uniq.txt > genes_multiple_v_single_analysis_all.txt
+
+atif@atlas:~/krispmer/new_datasets/exps/n22$ 
+
+
+That's a perfect final step for analyzing the **specificity and target genes** of your Krispmer candidates\! It clearly indicates you are moving from filtering sequences to identifying the biological context (genes) of the remaining highly specific gRNAs.
+
+Here is the final part of your progress report incorporating this analysis step:
+
+-----
+
+## Pipeline Steps (Continued)
+
+8.  **gRNA Alignment (Bowtie):** Aligned unique k-mer/gRNA targets against the reference index (`rice_exons`).
+
+    ```bash
+    bowtie -f ... # Actual Bowtie command ran here
+    ```
+
+9.  **Unique Alignment Filtering:** Ran the custom script to filter gRNA targets for **unique alignments only**, ensuring high specificity.
+
+    ```bash
+    bowtie_unique.sh
+    ```
+
+10. **Target Gene Extraction and Quantification:** Executed `getGeneList_multiple_v_single_all` to analyze final specific targets, comparing two sets (`multiple_v_single` and `unique_PAM_gRNAs_n22`).
+
+      * **Filtering for Perfect Matches (No Mismatches):**
+        ```bash
+        grep 'XM:i:0' ${prefix}_${ref}_all.sam > ${prefix}_${ref}_all_max_0.sam
+        ```
+        *(This retains only SAM entries where the **XM:i:0** tag indicates **zero mismatches** in the alignment.)*
+      * **Extracting Target Gene IDs:**
+        ```bash
+        awk '{print $3}' $fileName | sed 's/^rna-//' > $outputFile
+        ```
+        *(This extracts the target reference ID from column 3 and cleans the `rna-` prefix.)*
+      * **Counting Unique Genes:**
+        ```bash
+        sort geneIDs_... | uniq > geneIDs_..._sorted_uniq.txt
+        ```
+        *(This provides the final count of **unique genes** targeted by the highly specific gRNAs.)*
+
+-----
+
+This completes the documentation of your experimental pipeline. What summary or next steps can I help you with regarding these results?
