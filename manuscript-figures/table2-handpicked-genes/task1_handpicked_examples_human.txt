@@ -1,0 +1,58 @@
+########################################################################
+#  TASK 1 (HUMAN) -- handpicked examples:
+#  reference tools (CRISPOR / GuideScan2) recommend a guide that lies in a
+#  clinically important gene and is DUPLICATED in the individual (CHM13)
+#  while appearing UNIQUE in the reference (GRCh38).
+########################################################################
+
+THE POINT
+  CRISPOR and GuideScan2 score off-targets against the REFERENCE genome
+  (GRCh38). For each guide below the reference shows a SINGLE copy, so the
+  tools judge it specific and RECOMMEND it. But in the INDIVIDUAL's own
+  assembly (T2T-CHM13) the target is present in TWO copies -- so the guide
+  will cut at BOTH sites, i.e. TWICE the intended cutting, inside a
+  medically important gene. kRISP-meR, which scores against the individual,
+  flags all of these as off-target-unsafe and rejects them.
+
+  Copy number = exact 23-mer (20nt protospacer + NGG PAM) count in each
+  assembly's Jellyfish k-mer database (both strands).
+
+------------------------------------------------------------------------
+ HANDPICKED EXAMPLES  (CHM13 = individual, GRCh38 = reference)
+------------------------------------------------------------------------
+gene    importance                                            guide (23-mer, incl. PAM)  CHM13  GRCh38  asm-CFD  recommended
+                                                                                         (ind)  (ref)   score    by
+------- ----------------------------------------------------- ------------------------- ------ ------- -------  -------------------
+OPRM1   mu-opioid receptor; main target of opioid analgesics  AGGATGAGAATGGAGGGAAGAGG      2      1      4.37    GuideScan2
+        (FDA drug target)
+CXCR1   interleukin-8 (IL-8) receptor; neutrophil chemotaxis  TCCTCATCTTCCTGCTTTGCTGG      2      1      4.01    GuideScan2
+        / inflammation (ClinVar pathogenic)
+PPARD   PPAR-delta nuclear hormone receptor; metabolic        CTGCCGCTTCCAGAAGTGCCTGG      2      1      3.76    GuideScan2
+        drug target (FDA drug target)
+CCDC65  axonemal dynein assembly; primary ciliary dyskinesia  ATTGACTCCTAAGGAGCAGGAGG      2      1      2.54    CRISPOR + GuideScan2
+        CILD27 (ClinVar pathogenic)
+SACS    sacsin; recessive spastic ataxia of Charlevoix-       AGAACCCACTGATGTGAACTGGG      2      1      2.18    CRISPOR + GuideScan2
+        Saguenay, ARSACS (ClinVar pathogenic)
+
+  asm-CFD score = assembly CFD-weighted expected off-target cuts in the
+  individual (CHM13); >= 2 = duplicated / multi-cut. In every case: reference
+  (GRCh38) = 1 copy -> tool calls the guide unique and safe -> RECOMMENDS it.
+  Individual (CHM13) = 2 copies -> the guide actually cuts twice. kRISP-meR
+  rejects all five (asm-CFD >= 2).
+
+------------------------------------------------------------------------
+ NOTES (honest scope)
+------------------------------------------------------------------------
+- Magnitude: for guides that fall inside annotated genes the individual
+  copy number tops out at 2 (verified across all 131 famous-gene guides a
+  reference tool accepts -- max CHM13 copy = 2). Higher-copy k-mers (5x,
+  10x+) exist but lie in repeats / segmental duplications OUTSIDE genes.
+  So "2 in the individual vs 1 in the reference" is the strongest contrast
+  available within a named gene -- a 100% under-estimate by the reference-
+  based tools (they predict 1 cut; the individual gets 2).
+- These five are the clean multiple_v_single cases (duplicated in the
+  individual, single in the reference). Guides that are ABSENT from GRCh38
+  entirely (e.g. PROS1, HCAR3: CHM13=2, GRCh38=0) tell a related but
+  different reference-blindness story and are kept separate.
+- Full candidate list + per-guide assembly-CFD loads:
+  data/task1_human_grch38.tsv ; broader context: fixed/task1_famous_genes_human.txt

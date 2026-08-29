@@ -1,0 +1,110 @@
+########################################################################
+#  TASK 1 (HUMAN) -- reference tools recommend dangerous guides inside
+#  famous / clinically important genes
+#  Anchor: GRCh38 (individual = CHM13). Assembly-CFD off-target load.
+########################################################################
+
+DEFINITION OF A "HIT"
+  A famous gene that CONTAINS a mis-accepted dangerous guide, where a
+  mis-accepted dangerous guide is one that:
+    (i)   has assembly-CFD off-target load >= 2  (duplicated / multi-cut in
+          the individual's genome -- see Task 2c), AND
+    (ii)  is ACCEPTED by a reference tool (CRISPOR MITspec>=50 or
+          GuideScan2 spec>=0.2), AND
+    (iii) is NOT accepted by kRISP-meR (Ecuts>1.5 -> kRISP-meR rejects).
+  i.e. a guide a reference tool green-lights, that lands in an important
+  gene, and that kRISP-meR correctly flags as dangerous.
+
+FAMOUS-GENE UNIVERSE (3,753 unique symbols; each hit labelled by source)
+  COSMIC Cancer Gene Census ...... 723
+  ClinVar pathogenic/likely-path .. 3,078
+  FDA-approved drug targets ....... 385
+  ClinGen curated disease ......... 294
+  BROCA cancer-risk panel ......... 66
+  ACMG SF actionable .............. 59
+  (MacArthur-lab gene_lists + COSMIC CGC)
+
+GUIDE -> GENE MAPPING
+  mis-accepted guide -> ENST (GRCh38 exon alignment SAM, exact match) ->
+  gene symbol (Ensembl GRCh38.110) -> in famous-gene universe?
+
+------------------------------------------------------------------------
+ SUMMARY -- famous genes hit per class
+------------------------------------------------------------------------
+class                  truth   mis-acc guides  ->in famous  #famous genes
+multiple_v_single      reject       72             11            5
+ref_present_v_absent   reject       63              0            0
+ref_multiple_v_single  accept       44              7            5
+present_v_absent       accept       71             18            5
+                                              -----------  -------------
+                                    total 41 guide-hits in 15 distinct genes
+
+  ref_present_v_absent = 0 is expected: those guides are ABSENT in the
+  individual, so they cannot carry a high (>=2) assembly off-target load.
+
+------------------------------------------------------------------------
+ EVIDENCE -- famous / important genes with a reference-tool-mis-accepted
+ dangerous guide  (highest off-target load first)
+------------------------------------------------------------------------
+gene      importance                       asm-CFD  mis-accepted by  class
+HLA-A     COSMIC cancer                     5.41    GuideScan2       ref_multiple_v_single
+HLA-B     ClinVar pathogenic                5.41    GuideScan2       ref_multiple_v_single
+ALDH3B2   FDA drug target                   4.80    CRISPOR          present_v_absent
+OPRM1     FDA drug target (mu-opioid R)     4.37    GuideScan2       multiple_v_single
+CXCR1     ClinVar pathogenic                4.01    GuideScan2       multiple_v_single
+PPARD     FDA drug target (nuclear R)       3.76    GuideScan2       multiple_v_single
+FCGR3A    ClinVar pathogenic (immune Fc)    3.00    GuideScan2       ref_multiple_v_single
+FCGR3B    ClinVar pathogenic (immune Fc)    3.00    GuideScan2       ref_multiple_v_single
+CTNNB1    COSMIC + ClinGen + ClinVar        2.75    CRISPOR          present_v_absent
+          (beta-catenin oncogene)
+CCDC65    ClinVar pathogenic                2.54    CRISPOR;GS2      multiple_v_single
+PROS1     ClinVar pathogenic (coagulation)  2.70    CRISPOR          present_v_absent
+SALL1     ClinGen + ClinVar (Townes-Brocks) 2.21    GuideScan2       ref_multiple_v_single
+SACS      ClinVar pathogenic (ataxia)       2.18    CRISPOR;GS2      multiple_v_single
+PROP1     ClinVar pathogenic (pituitary)    2.38    CRISPOR          present_v_absent
+HCAR3     FDA drug target                   2.00    CRISPOR          present_v_absent
+  (full per-guide table: data/task1_human_grch38.tsv)
+
+  READING: e.g. GuideScan2 recommends a guide inside HLA-A/HLA-B with an
+  expected off-target load of 5.4 genomic cuts; CRISPOR recommends a guide
+  inside the beta-catenin oncogene CTNNB1 (2.75 cuts) and the coagulation
+  gene PROS1 -- all guides duplicated/multi-cut in the individual, which
+  kRISP-meR correctly rejects. Reference tools fail in different classes:
+  GuideScan2 dominates the duplication classes (multiple_v_single,
+  ref_multiple_v_single), CRISPOR the present_v_absent class.
+
+------------------------------------------------------------------------
+ ENRICHMENT TEST -- are mis-accepted guides MORE likely to hit famous
+ genes than kRISP-meR-accepted (safe) guides?  (Fisher exact, right-tail)
+------------------------------------------------------------------------
+                       MISACC in-fam   KSAFE in-fam   MISACC%  KSAFE%  ratio   p
+multiple_v_single         11/72           3/3          15.3%   100%*   0.15    1.0
+ref_present_v_absent       0/63           0/1           0.0%    0.0%   --      1.0
+ref_multiple_v_single      7/44           0/45         15.9%    0.0%   inf     0.0056  **
+present_v_absent          18/71          82/447        25.4%   18.3%   1.38    0.11
+POOLED                    36/250         85/496        14.4%   17.1%   0.84    0.86
+  * multiple_v_single KSAFE n=3 (kRISP accepts almost nothing here) -> 100%
+    is small-n noise, ratio meaningless.
+
+  HONEST READING:
+   - The POOLED enrichment is NOT significant (ratio 0.84, p=0.86). Across
+     all classes, mis-accepted guides are not, in aggregate, more likely to
+     land in famous genes than kRISP-meR-safe guides. We do NOT claim a
+     genome-wide "reference tools target important genes" effect.
+   - ONE class is significantly enriched: ref_multiple_v_single -- 7/44
+     mis-accepted guides in famous genes vs 0/45 kRISP-safe guides
+     (p=0.0056). Here reference tools (GuideScan2) accept dangerous guides
+     in famous genes (HLA-A/B, FCGR3A/B, SALL1) that kRISP-meR entirely
+     avoids.
+   - The result is therefore an EXISTENCE / case result, not an enrichment
+     claim: reference tools DO recommend dangerous guides inside specific
+     clinically important genes (the table above), and in the
+     single-in-individual / multiple-in-reference class this is a
+     statistically significant pattern.
+
+WHY not a broad enrichment: duplicated (dangerous) guides concentrate in
+multi-copy gene FAMILIES (HLA, FCGR3A/B, zinc-finger and olfactory-receptor
+clusters). Some of these families are clinically important (HLA, FCGR3),
+but most multi-copy loci are not "famous", so the overall famous-gene rate
+is not elevated. The danger is real and lands on important genes in
+specific, nameable cases -- which is what Task 1 set out to show.

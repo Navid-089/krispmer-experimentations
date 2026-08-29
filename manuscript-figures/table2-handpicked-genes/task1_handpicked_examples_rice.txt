@@ -1,0 +1,73 @@
+########################################################################
+#  TASK 1 (RICE) -- handpicked examples:
+#  reference tools (CRISPOR / GuideScan2) recommend a guide that lies in a
+#  known agronomic TRAIT gene (funRiceGenes) and is DUPLICATED in the
+#  individual (aus-N22) while appearing UNIQUE in the reference (japonica).
+########################################################################
+
+THE POINT  (same logic as the human case)
+  CRISPOR and GuideScan2 score off-targets against the REFERENCE genome
+  (japonica, Nipponbare MSU v7.0). For each guide below the reference shows
+  a SINGLE copy, so the tools judge it specific and RECOMMEND it. But in the
+  INDIVIDUAL's own assembly (aus cultivar N22) the target is present in TWO
+  copies -- so the guide cuts at BOTH sites, TWICE the intended cutting,
+  inside a functionally characterised rice trait gene. kRISP-meR, which
+  scores against the individual, flags all of these off-target-unsafe and
+  rejects them.
+
+  Copy number = exact 23-mer (20nt protospacer + NGG PAM) count in each
+  assembly's Jellyfish k-mer database (both strands).
+
+MAPPING (how a guide is tied to a named trait gene, without an OsN22<->japonica
+ID crosswalk, which does not exist):
+  funRiceGenes trait gene -> its japonica MSU locus (LOC_Os..) -> that gene's
+  CDS sequence (Phytozome Osativa v7.0) -> NGG guides in the CDS -> matched by
+  SEQUENCE to the mis-accepted dangerous guides from the N22 assembly-CFD run.
+  (guide sequence is assembly-independent, so no ID mapping is needed.)
+
+DEFINITION OF A MIS-ACCEPTED DANGEROUS GUIDE (same as human):
+  assembly-CFD >= 2 (duplicated / multi-cut in N22) AND accepted by a
+  reference tool (CRISPOR MITspec>=50 or GuideScan2 spec>=0.2) AND NOT
+  accepted by kRISP-meR (Ecuts>1.5).
+
+------------------------------------------------------------------------
+ HANDPICKED EXAMPLES  (N22 = individual, japonica = reference)
+------------------------------------------------------------------------
+trait gene   function (funRiceGenes)                              guide (23-mer, incl PAM)  N22    japon.  asm-CFD  recommended
+                                                                                            (ind)  (ref)   score    by
+------------ --------------------------------------------------- ------------------------- ------ ------- -------  -------------------
+OsAAP15      amino-acid permease; grain protein content /        GGGCTCGTAGAACCCGAAGCCGG     2      1      4.94    GuideScan2
+             nitrogen use
+OsSCR        SCARECROW GRAS TF; stomatal / ground-tissue         GGCGGCGGCGGTTTCCTCCGCGG     2      1      3.41    GuideScan2
+             (root) development
+OsMT1d       type-1 metallothionein; metal homeostasis /         AGTTGCAACTGCGGTTCCTGCGG     2      1      3.38    GuideScan2
+             oxidative-stress tolerance
+OsYABBY4     YABBY transcription factor (TOB2); meristem /        CAGCCTGTTCAAGACGGTGACGG     2      1      2.98    GuideScan2
+             vascular development
+MODD         mediator of OsbZIP46 deactivation & degradation;    CAAGTACAGGAAAGGCGAGGAGG     2      1      2.67    CRISPOR + GuideScan2
+             negative regulator of ABA signalling & drought
+OSHB4        HD-ZIP III transcription factor (OsHox32);           GACTTATGCACCGACAACTTTGG     2      1      2.00    GuideScan2
+             leaf adaxial-abaxial polarity
+HIS1         HIS1 dioxygenase; herbicide (beta-triketone)         GACGAGAAGAATCGTCAAGAGGG     2      1      2.00    CRISPOR + GuideScan2
+             detoxification / resistance
+
+  asm-CFD score = assembly CFD-weighted expected off-target cuts in the
+  individual (N22); >= 2 = duplicated / multi-cut. In every case: reference
+  (japonica) = 1 copy -> tool calls the guide unique and safe -> RECOMMENDS
+  it. Individual (N22) = 2 copies -> the guide cuts twice. kRISP-meR rejects
+  all of them (asm-CFD >= 2).
+
+------------------------------------------------------------------------
+ NOTES (honest scope)
+------------------------------------------------------------------------
+- 143 mis-accepted dangerous guides in the rice N22 run fall in 11 trait-gene
+  CDS regions overall; the 7 above are the clean multiple_v_single cases
+  (duplicated in the individual, single in the reference).
+- The reverse direction also occurs: guides in trait genes SAD1, OsAMT2;1,
+  qST-5.1 have N22=1 / japonica=2 (multiple in the REFERENCE) -- reference
+  tools mis-handle both directions of copy-number disagreement; these are
+  kept separate.
+- As in human, per-gene copy number tops out at 2 for guides inside genes
+  (higher-copy k-mers lie in intergenic repeats). "2 in the individual vs 1
+  in the reference" = a 100% under-estimate by the reference-based tools.
+- Full per-guide table: data/task1_rice_n22.tsv
